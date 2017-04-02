@@ -142,11 +142,11 @@ query = 'SELECT * FROM Users'
 q1 = cur.execute(query)
 users_info = q1.fetchall()
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
-
+print("********* SCREEN NAMES *********")
 query = 'SELECT Users.screen_name From Users'
 q2 = cur.execute(query)
 screen_names = [name for line in q2.fetchall() for name in line]
-
+print(screen_names)
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
 
 query = 'SELECT * FROM Tweets WHERE retweets > 5'
@@ -199,7 +199,18 @@ print("************************************")
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
-
+print("********* TWITTER DICTIONARY *********")
+twitter_info_diction = {}
+query_list = []
+query_list = [("SELECT Tweets.text FROM Tweets INNER JOIN Users WHERE Users.screen_name ='" + sn + "'") for sn in screen_names]
+for query in query_list:
+	q6 = cur.execute(query)
+	text_tups = q6.fetchall()
+	tweet_text = [text[0] for text in text_tups]
+	tweet_name = screen_names[query_list.index(query)]
+	tweet_diction = {tweet_name : tweet_text}
+	twitter_info_diction.update(tweet_diction)
+print(twitter_info_diction)
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
 conn.close()
