@@ -184,13 +184,17 @@ print(description_words)
 
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
-'''
+print("********* MOST COMMON CHAR *********")
+best_char = collections.Counter(descriptions_fav_users[0]).most_common(1)[0]
+print(best_char)
 for desc in descriptions_fav_users:
-	best_char = collections.Counter(desc).most_common(1)[1]
-	most_common_char = best_char
-	if most_common_char
-#most_common_dict = collections.Counter()
-'''
+	current_best = collections.Counter(desc).most_common(1)[0]
+	if current_best[1] > best_char[1]:
+		best_char = current_best 
+most_common_char = best_char[0]
+print(most_common_char)
+print("************************************")
+
 ## Putting it all together...
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
@@ -198,7 +202,7 @@ for desc in descriptions_fav_users:
 
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
-
+conn.close()
 
 ###### TESTS APPEAR BELOW THIS LINE ######
 ###### Note that the tests are necessary to pass, but not sufficient -- must make sure you've followed the instructions accurately! ######
