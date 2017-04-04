@@ -126,7 +126,16 @@ for tweet in umich_tweets:
 
 	for x in tweet['entities']['user_mentions']:
 		s2 = 'INSERT OR IGNORE INTO Users Values (?, ?, ?, ?)'
-		user = api.get_user(x['screen_name'])
+		unique_identifier = "twitter.{}".format(x['screen_name'])
+		user = []
+		if unique_identifier in CACHE_DICTION:
+			user = CACHE_DICTION[unique_identifier]
+		else:
+			user = api.get_user(x['screen_name'])
+			CACHE_DICTION[unique_identifier] = user
+			cache_file = open(CACHE_FNAME,'w') # open the cache file for writing
+			cache_file.write(json.dumps(CACHE_DICTION)) # make the whole dictionary holding data and unique identifiers into a json-formatted string, and write that wholllle string to a file so you'll have it next time!
+			cache_file.close()
 		user_vals = (user['id_str'],user['screen_name'], user['status']['favorite_count'], user['description'])
 		cur.execute(s2, user_vals)
 
@@ -142,6 +151,7 @@ query = 'SELECT * FROM Users'
 q1 = cur.execute(query)
 users_info = q1.fetchall()
 # Make a query to select all of the user screen names from the database. Save a resulting list of strings (NOT tuples, the strings inside them!) in the variable screen_names. HINT: a list comprehension will make this easier to complete!
+
 print("********* SCREEN NAMES *********")
 query = 'SELECT Users.screen_name From Users'
 q2 = cur.execute(query)
@@ -149,23 +159,24 @@ screen_names = [name for line in q2.fetchall() for name in line]
 print(screen_names)
 # Make a query to select all of the tweets (full rows of tweet information) that have been retweeted more than 25 times. Save the result (a list of tuples, or an empty list) in a variable called more_than_25_rts.
 
+print("********* MORE THAN 25 RT *********")
 query = 'SELECT * FROM Tweets WHERE retweets > 5'
 q3 = cur.execute(query)
 more_than_25_rts = q3.fetchall() # list 
-print("********* MORE THAN 25 RT *********")
 print(more_than_25_rts)
 
 # Make a query to select all the descriptions (descriptions only) of the users who have favorited more than 25 tweets. Access all those strings, and save them in a variable called descriptions_fav_users, which should ultimately be a list of strings.
 
+print("********* DESCRIPTION FAVE USERS *********")
 query = 'SELECT Users.description FROM Users WHERE num_favs > 5'
 q4 = cur.execute(query)
 descriptions_fav_users = [line for desc in q4.fetchall()for line in desc]
-print("********* DESCRIPTION FAVE USERS *********")
 print(descriptions_fav_users)
 # Make a query using an INNER JOIN to get a list of tuples with 2 elements in each tuple: the user screenname and the text of the tweet -- for each tweet that has been retweeted more than 50 times. Save the resulting list of tuples in a variable called joined_result.
 
 print("********* JOINED RESULT *********")	
-query = 'SELECT Tweets.text, Users.screen_name FROM Tweets INNER JOIN Users ON Tweets.user_id = Users.user_id WHERE Tweets.retweets > 5'
+#query = "SELECT Users.screen_name, Tweets.text FROM Users INNER JOIN Tweets WHERE Tweets.retweets > 5"
+query = 'SELECT Users.screen_name, Tweets.text FROM Users INNER JOIN Tweets ON instr(Users.user_id, Tweets.user_id) WHERE Tweets.retweets > 50'
 q5 = cur.execute(query)
 joined_result = q5.fetchall()
 print(joined_result)
@@ -174,24 +185,30 @@ print(joined_result)
 
 ## Use a set comprehension to get a set of all words (combinations of characters separated by whitespace) among the descriptions in the descriptions_fav_users list. Save the resulting set in a variable called description_words.
 
+print("********* DESCRIPTION WORDS *********")
 temp_list = []
 for line in descriptions_fav_users:
 	for word in line.split():
 		temp_list.append(word)
 description_words = set(temp_list)
-print("********* DESCRIPTION WORDS *********")
 print(description_words)
 
 
 ## Use a Counter in the collections library to find the most common character among all of the descriptions in the descriptions_fav_users list. Save that most common character in a variable called most_common_char. Break any tie alphabetically (but using a Counter will do a lot of work for you...).
 print("********* MOST COMMON CHAR *********")
-best_char = collections.Counter(descriptions_fav_users[0]).most_common(1)[0]
-print(best_char)
+best_char = collections.Counter(descriptions_fav_users[0]).most_common(1)[0]# a tuple
+#print(type(best_char))
 for desc in descriptions_fav_users:
-	current_best = collections.Counter(desc).most_common(1)[0]
-	if current_best[1] > best_char[1]:
-		best_char = current_best 
-most_common_char = best_char[0]
+	current_best = collections.Counter(desc).most_common(1)[0] # a tuple
+	if current_best[1] == best_char[1]:
+		best_list = []
+		best_list.append(best_char)
+		best_list.append(current_best)
+		sort_list = sorted(best_list, key = lambda x: x[0])
+		most_common_char = sort_list[0][0]
+	elif current_best[1] > best_char[1]:
+		most_common_char = current_best[0] 
+
 print(most_common_char)
 print("************************************")
 
@@ -199,7 +216,7 @@ print("************************************")
 # Write code to create a dictionary whose keys are Twitter screen names and whose associated values are lists of tweet texts that that user posted. You may need to make additional queries to your database! To do this, you can use, and must use at least one of: the DefaultDict container in the collections library, a dictionary comprehension, list comprehension(s). Y
 # You should save the final dictionary in a variable called twitter_info_diction.
 
-print("********* TWITTER DICTIONARY *********")
+# print("********* TWITTER DICTIONARY *********")
 twitter_info_diction = {}
 query_list = []
 query_list = [("SELECT Tweets.text FROM Tweets INNER JOIN Users WHERE Users.screen_name ='" + sn + "'") for sn in screen_names]
@@ -210,7 +227,7 @@ for query in query_list:
 	tweet_name = screen_names[query_list.index(query)]
 	tweet_diction = {tweet_name : tweet_text}
 	twitter_info_diction.update(tweet_diction)
-print(twitter_info_diction)
+#print(twitter_info_diction)
 
 ### IMPORTANT: MAKE SURE TO CLOSE YOUR DATABASE CONNECTION AT THE END OF THE FILE HERE SO YOU DO NOT LOCK YOUR DATABASE (it's fixable, but it's a pain). ###
 conn.close()
